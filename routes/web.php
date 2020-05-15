@@ -37,6 +37,7 @@ Route::get('peliculas', function(){
 	return view('saveMovieWithFetch');
 });
 
+Route::post('/movies/save', 'MovieController@save');
 
 
 

@@ -17,7 +17,7 @@
 				</div>
 				<div class="col-4">
 					<h2>Dar de alta una película</h2>
-					<form method="post" enctype="multipart/form-data">
+					<form id="form" method="post" enctype="multipart/form-data" >
 						@csrf
 						<div class="form-group">
 							<label>Title:</label>
@@ -41,6 +41,7 @@
 						</div>
 						
 						<button type="submit" class="btn btn-success">GUARDAR</button>
+						<small id=""></small>
 					</form>
 				</div>
 			</div>
@@ -54,27 +55,38 @@
 			let span = document.querySelector('h2 span');
 
 			//Tag para obtener el formulario antes de enviarlo	
-			let elFormulario = document.querySelector("form");
+			let form = document.querySelector("form");
 
 			let errorSmall = document.querySelectorAll(".error")
-			console.log(errorSmall)
+			
 
 
-			fetch("http://localhost:8000/api/peliculas")
+			function obtenerPeliculas(){
+				fetch("http://localhost:8000/api/peliculas")
 			.then(function(respuesta){
+				
 				return respuesta.json();
 			})
 			.then(function(peliculas){
+
+					// `peliculas.forEach(function(elemento, posicion, array){
+					// 						// agregar los li
+					// 					} )`
+
+				span.innerText = peliculas.length;
 				for(let i = 0; i< peliculas.length; i++){
-  				ul.innerHTML +=`<li> ${peliculas[i].title} </li>`; 
+  				ul.innerHTML +=`<li>${peliculas[i].title} - Rating ${peliculas[i].rating}</li>`; 
   			}
 			})
+			}
+
+			obtenerPeliculas();
 
 
 
-			elFormulario.addEventListener('submit', function(event) {
+			form.addEventListener('submit', function(event) {
 			  	event.preventDefault();
-				let elementosForm = elFormulario.elements;
+				let elementosForm = form.elements;
 
 				let elementsArray = Array.from(elementosForm);
 				elementsArray.pop();
@@ -90,7 +102,31 @@
 				}
 
 				if(!error){
-					alert('El formulario esta listo para enviarse')
+					// Array de los campos del Formulario, sacamos el último pues es el botón de enviar
+			let campos = Array.from(form.elements);
+			campos.pop();
+
+			let datosDelFormulario = new FormData();
+			campos.forEach(function(elemento){
+				datosDelFormulario.append(elemento.name, elemento.value)
+			})
+
+			// Cabecera CSRF para que Laravel recibe el $request y guarde la película
+			let header = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+					// Llamado asíncrono para guardar la película
+			window.fetch('http://localhost:8000/movies/save', {
+				method: 'POST',
+				body: datosDelFormulario, // data del formulario
+				headers: {'X-CSRF-TOKEN': header} // Para enviar data via fetch
+
+			})
+				.then(response => response.text())
+				.then(function(){
+					document.getElementById("form").reset()
+					ul.innerText = "";
+					obtenerPeliculas();
+				})
+				 // .catch(error => console.error(`Error: `, error));
 				}
 			})
 
@@ -108,9 +144,9 @@
 			// let header = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
 			// // Llamado asíncrono para guardar la película
-			// window.fetch('urlPost', {
+			// window.fetch('http://localhost:8000/movies/save', {
 			// 	method: 'POST',
-			// 	body: '¿?', // data del formulario
+			// 	body: campos, // data del formulario
 			// 	headers: {'X-CSRF-TOKEN': header} // Para enviar data via fetch
 
 			// })
